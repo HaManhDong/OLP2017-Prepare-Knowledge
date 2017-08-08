@@ -82,6 +82,14 @@ Nếu kết qủa hiện ra như trên nghĩa là ta đã cài đặt thành cô
 
 Như ta thấy trong hình trên, node-red editor có 3 phần chính, từ trái sang phái lần lượt là danh sách các node đã được định nghĩa sẵn trong node-red, thực hiện 1 nhiệm vụ nào đó; thứ 2 đó là 1 panel để ta kéo thả các node và nối các node lại với nhau để tạo ra các **flow** - tập các node; và cuối cùng là tab info - hiển thị thông tin của mỗi flow hoặc của 1 node khi ta click vào, và tab debug - hiển thị các message mà ta đặt trên các node debug.
 
+Có 3 loại node chính:
+
+1. **Input Nodes** (ví dụ: inject): để ta đưa dữ liệu vào Node-RED application hoặc **flow**. Ta sử dụng các input nodes để **connect data** từ các **services** khác, ví dụ như Twitter, Google, websockets, tcp nodes, hoặc chỉ đơn giản là ta tự đưa 1 message đơn giản vào bằng cách sử dụng **inject node**.
+2. **Output Nodes** (ví dụ: debug): để ta đưa dữ liệu ra ngoài Node-RED application hoặc flow. Ta sử dụng các output nodes để **send data** tới các **services** khác ví dụ như Twitter, tcp hoặc email nodes, hoặc chỉ đơn giản là debug bằng cách sử dụng **debug node**.
+3. **Processing Nodes** (ví dụ: function): để ta xử lý data. Ta sử dụng các processing nodes để chuyển đổi kiểu dữ liệu (sử dụng các **json, csvm, xml** nodes) , hoặc sử dụng data để trích rút ra 1 message nào đó (sử dụng các **trigger, delay** nodes), hoặc để viết các functions xử lý data (sử dụng **function node**).
+
+Ngoài ra, ta cần chú ý rằng có 1 số node như **inject node** hay **debug node** có 1 button bên cạnh để ta **kích hoạt** 1 node (trong trường hợp button của inject node) hay **enable/disable** 1 node (trong trường hợp button của debug node)
+
 #### **3. Tạo flow**
 
 Ví dụ này sẽ tạo 1 flow gồm 5 node: 1 node inject timestamp, 1 node http request, 1 node function và 2 node debug, để thực hiện công việc:
@@ -136,4 +144,24 @@ Sau đó, ta ấn Deploy ở góc trên phải giao diện để deploy flow, , 
 **Flow** - còn được gọi là Node-red programs - là 1 tập hợp các node được kết nối với nhau để trao đổi các messages. Về bản chất thì 1 flow bao gồm 1 danh sách các **Javascript objects** mô tả các nodes và cấu hình của các nodes, cũng như danh sách các nodes mà node đó được connect tới.
 
 **Messages**
+
+
+Các messages được truyền giữa các nodes theo quy ước là các **Javascript Objects** được gọi là **msg**, bao gồm 1 tập các thuộc tính. Các message thường có chung 1 thuộc tính là **msg.payload** chứa payload của message đó. Ta có thể sử dụng 1 số built-in nodes của Node-RED như **change node** để thêm/chỉnh sửa các thuộc tính của messages trước khi được gửi sang các nodes khác. 
+
+Message là cấu trúc dữ liệu chính được sử dụng trong Node-RED. Đây là 1 trong những ưu điểm chính của 1 **flow-based language**, bởi vì các nodes là độc lập và chỉ tương tác với các nodes khác thông qua các message. Ta có thể chắc chắn rằng sẽ không xảy ra các ngoại lệ không mong muốn và do đó, ta có thể sử dụng lại các flows đã có để tạo ra các flows mới.
+
+**Nodes**
+
+Các nodes là thành phần chính tạo nên các Node_RED flows. Khi 1 flow chạy, các messages được tạo ra, và xử lý bởi các nodes. Các nodes bao gồm: JavaScript code (trong các javascript .js file) chạy trong Node-red service, 1 file HTML chứa mô tả của node để node đó hiển thị trên giao diện (như loại node, màu sắc, tên, icon, code to configure the node, and help text). Các **node** chỉ có thể có **nhiều nhất 1 input** và **không hoặc nhiều outputs**.
+
+Khi ta run Node-RED, các node được nạp và Node_RED service trong quá trình khởi tạo. Khi ta truy cập vào Node-RED editor trên trình duyệt, quy trình tạo ra 1 node sẽ như sau:
+
+![workfollow generate node](./imgs/workfollow_generate_node.png)
+Hình 1: Node RED loads both HTML for the editor and JavaScript for the server from the node packages.
+
+**Wires**
+
+Wires định nghĩa các kết nối giữa node input và output endpoints trong 1 flow. Ta có thể kết nối nhiều input endpoints tới 1 output endpoint của 1 node, khi đó các messages sẽ được gửi tới mỗi node được kết nối theo thứ tự chúng được nối với output endpoint. Còn trong trường hợp có nhiều output endpointa nối tới 1 input endpoint, các messages từ bất kì node output nào đều sẽ được xử lý tại node input khi message đó được gửi tới. Ngoài ra ta có thể kết nối input và output của 2 (hoặc nhiều) node với nhau để tạo ra vòng lặp.
+
+
 
