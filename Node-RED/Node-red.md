@@ -163,5 +163,113 @@ Hình 1: Node RED loads both HTML for the editor and JavaScript for the server f
 
 Wires định nghĩa các kết nối giữa node input và output endpoints trong 1 flow. Ta có thể kết nối nhiều input endpoints tới 1 output endpoint của 1 node, khi đó các messages sẽ được gửi tới mỗi node được kết nối theo thứ tự chúng được nối với output endpoint. Còn trong trường hợp có nhiều output endpointa nối tới 1 input endpoint, các messages từ bất kì node output nào đều sẽ được xử lý tại node input khi message đó được gửi tới. Ngoài ra ta có thể kết nối input và output của 2 (hoặc nhiều) node với nhau để tạo ra vòng lặp.
 
+#### **5. Các bước tạo 1 node**
 
+Các nodes phải được tạo ra khi 1 flow được deployed, sau đó các nodes sẽ làm nhiệm vụ gửi hoặc nhận các messages trong khi flow đang ở trạng thái running, và các nodes sẽ bị xóa khi ta deployed flow tiếp theo.
+
+1 node được định nghĩa bởi 2 file, đó là:
+
+- Một file Js để định nghĩa hành động và chức năng của node.
+- Một file HTMl để định nghĩa các thuộc tính của node, panel chỉnh sửa node đó và thông tin trợ giúp về node đó (help text). 
+
+Ngoài ra, để ta có thể đóng gói 1 node, ta cần thêm 1 file **package.json** để chứa metadata của node.
+
+Trong ví dụ dưới đây ra sẽ tạo ra 1 node có chức năng là convert payload của các message thành tất cả đều là chữ thường.
+
+Ta cần tạo ra 3 file như sau:
+
+- lower-case.js
+- lower-case.html
+- package.json
+
+File **lower-case.js** sẽ định nghĩa chức năng của node mà ta muốn tạo. Ở đây ta sẽ viết đoạn code để chuyển các kí tự thành chữ thường, như sau:
+
+```sh
+module.exports = function(RED) {
+    function LowerCaseNode(config) {
+        RED.nodes.createNode(this,config);
+        var node = this;
+        node.on('input', function(msg) {
+            msg.payload = msg.payload.toLowerCase();
+            node.send(msg);
+        });
+    }
+    RED.nodes.registerType("lower-case",LowerCaseNode);
+}
+```
+Trong NodeJs, module.exports là 1 object được trả về từ câu lệnh **require()**. Ví dụ ta có 1 file Js là **test.js** và ta muốn sử dụng các biến và các function trong file test.js thì ta chỉ cần import file test.js vào 1 đối tượng **test_obj** bằng câu lệnh **var test_obj = require("./test")**, khi đó ta sẽ nhận lại 1 module.exports object chứa các biến và function trong file test.js và ta có thể sử dụng thông qua đối tượng **test_obj**. (Việc NodeJs execute để tạo ra object đó ta sẽ không đề cập tới ở đây.)
+
+Quay trở lại với ví dụ trong file **lower-case.js**, ta đã định nghĩa object module.exports là 1 function, function này sẽ được gọi khi Node-red load các nodes trong quá trình start-up. Function có 1 tham số là **RED**, *that provides the module access to the Node-RED runtime api.*
+
+Ta định nghĩa node mà ta muốn tạo bằng 1 function, như trong ví dụ trên là **LowerCaseNode()**, function này sẽ được gọi mỗi khi **1 instance** mới của node được tạo. 
+
+File **lower-case.html** sẽ có nội dung như sau:
+
+```sh
+<script type="text/javascript">
+    RED.nodes.registerType('lower-case',{
+        category: 'function',
+        color: '#a6bbcf',
+        defaults: {
+            name: {value:""}
+        },
+        inputs:1,
+        outputs:1,
+        icon: "file.png",
+        label: function() {
+            return this.name||"lower-case";
+        }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="lower-case">
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="lower-case">
+    <p>A simple node that converts the message payloads into all lower-case characters</p>
+</script>
+```
+
+File HTML của 1 node chứa 3 thông tin chính là:
+
+- Các thông tin của node để được đăng kí với editor
+- Cửa sổ chỉnh sửa (the edit template)
+- Thông tin trợ giúp (the help text)
+
+Trong ví dụ này, node ta tạo ra chỉ có 1 thuộc tính **name** cho phép người dùng chỉnh sửa trong cửa sổ chỉnh sửa. 
+
+Cuối cùng là file **package.json**, đây là 1 **standart file** được sử dụng trong các module của node.js để mô tả nội dung của module đó. Ta có thể dùng câu lệnh `npm init` để tạo ra 1 file **package.json** chuẩn. File package.json trong ví dụ này sẽ có nội dung như sau:
+
+```sh
+{
+  "name": "node-red-contrib-example-lower-case",
+  "node-red" : {
+      "nodes": {
+          "lower-case": "lower-case.js"
+      }
+  }
+}
+
+```
+
+**Run**
+
+Sau khi ta đã tạo xong node, ta có thể cài đặt node đó vào Node-RED runtime. Ta sử dụng `npm link` để linked node mà ta đã tạo trong thư mục local vào local node-red install. Mục đích là để ta có thể tiếp tục phát triển node đó ở thư mục local, và mỗi lần có thay đổi thì ta chỉ cần restart lại Node-red và kiểm tra lại node trên Node-red. Để thực hiện như vậy, ta di chuyển tới thư mục chưa file package.json và chạy lệnh:
+
+```sh
+sudo npm link
+```
+
+Sau đó ta di chuyển tới thư mục node-red và chạy lênh:
+
+```sh
+cd ~/.node-red
+npm link <name of your node module>
+```
+
+#### **5. Link node mới tạo vào folder data đã mout với thư mục /data trong node-red container**
 
